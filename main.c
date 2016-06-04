@@ -12,12 +12,12 @@
 #include "interprete.h"
 #include "optimize.h"
 
-int main(int argc, char** argv) {
-#ifdef DEBUG
-    freopen("data1.c", "r", stdin);
-    freopen("x.s", "w", stdout);
-#else
-	if (argc == 3)
+char flag_print_ast = 0;
+char flag_print_ir = 0;
+
+int main(int argc, char** argv)
+{
+	if (argc >= 3)
 	{
 		printf("%s %s\n", argv[1], argv[2]);
 		FILE* output = fopen(argv[2], "w");
@@ -30,41 +30,24 @@ int main(int argc, char** argv) {
 		printf("wrong number of parameters\n");
 		return 1;
 	}
-#endif
     yyparse();
-#ifdef PRINT_AST
-    print_ast(treeroot, 0);
-#endif
+    if (flag_print_ast)
+    {
+      print_ast(treeroot, 0);
+    }
     phase_2_semantics_check();
     phase_3_translate();
-
     optimize();
-
-#ifdef PRINT_IR
-    FILE* fout = stderr;
-
-#ifdef COLOR_ON
-    fprintf(fout, "#\033[36;1m================ IR -> Part I  ================\033[0m\n");
-#else
-    fprintf(fout, "#================ IR -> Part I  ================\n");
-#endif
-    ir_print(&gir);
-
-#ifdef COLOR_ON
-    fprintf(fout, "#\033[36;1m================ IR -> Part II ================\033[0m\n");
-#else
-    fprintf(fout, "#================ IR -> Part II ================\n");
-#endif
-    ir_print(&mir);
-
-#ifdef COLOR_ON
-    fprintf(fout, "#\033[36;1m================ IR -> Part III ================\033[0m\n");
-#else
-    fprintf(fout, "#================ IR -> Part III ================\n");
-#endif
-    ir_print(&ir);
-
-#endif
+    if (flag_print_ir)
+    {
+      FILE* fout = stderr;
+      fprintf(fout, "#================ IR -> Part I  ================\n");
+      ir_print(&gir);
+      fprintf(fout, "#================ IR -> Part II ================\n");
+      ir_print(&mir);
+      fprintf(fout, "#================ IR -> Part III ================\n");
+      ir_print(&ir);
+    }
 
     phase_4_interprete();
     return 0;

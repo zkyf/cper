@@ -386,6 +386,7 @@ void semantics_check(TreeNode* p) { /*{{{*/
         case EXPRESSION_STATEMENT: break; 
         case COMPOUND_STATEMENT: semantics_check_compound_statement(p); break;
         case SELECTION_STATEMENT: semantics_check_selection_statement(p); break;
+        case SWITCH_STATEMENT: break;
         case ITERATION_STATEMENT: semantics_check_iteration_statement(p); break;
         case JUMP_STATEMENT: semantics_check_jump_statement(p); break;
         case EXPRESSION: p->info = copy_info_node(semantics_check_expression(p)); break;
@@ -671,14 +672,14 @@ void semantics_check_function_definition(TreeNode* p) { /* {{{ */ //ok
 
     p->info = copy_info_node(top_function);
     top_function = NULL;
-} //}}}
+}
 
 InfoNode* semantics_check_function_definition_1(TreeNode* p) { /* {{{ */ //ok
     InfoNode* ptr = semantics_check_type_specifier(p->children[0]);
     ptr = semantics_check_plain_declarator(p->children[1], ptr);
     //函数定义是否存在之类的检查，均在最高层进行
     return ptr;
-} //}}}
+}
 
 InfoNodeFunction* semantics_check_parameters(TreeNode* p) { /* {{{ */ //ok
     InfoNodeFunction* ret = new_info_node_function();
@@ -696,16 +697,16 @@ InfoNodeFunction* semantics_check_parameters(TreeNode* p) { /* {{{ */ //ok
     }
     ret->width = ret->offset[ret->size];
     return ret;
-} //}}}
+}
 
-InfoNode* semantics_check_plain_declaration(TreeNode* p) { /* {{{ */ //ok
+InfoNode* semantics_check_plain_declaration(TreeNode* p) {
     assert(p->type == PLAIN_DECLARATION);
     InfoNode* ret = semantics_check_type_specifier(p->children[0]);
     ret = semantics_check_declarator(p->children[1], ret);
     return ret;
-} //}}}
+}
 
-void semantics_check_compound_statement(TreeNode* p) { /* {{{ */ //ok
+void semantics_check_compound_statement(TreeNode* p) {
     symbol_table_next_level();
     int i, j;
     for (i = 0; i < p->size; i++) {
@@ -714,9 +715,9 @@ void semantics_check_compound_statement(TreeNode* p) { /* {{{ */ //ok
         }
     }
     symbol_table_prev_level();
-}//}}}
+}
 
-void semantics_check_selection_statement(TreeNode* p) { /* {{{ */ //ok
+void semantics_check_selection_statement(TreeNode* p) {
     InfoNode* tmp = semantics_check_expression(p->children[0]);
     if (!isscalar(tmp->type)) {
         report_error("if expression type error, not a scalar");
@@ -725,9 +726,21 @@ void semantics_check_selection_statement(TreeNode* p) { /* {{{ */ //ok
     if (p->size == 3) {
         semantics_check(p->children[2]);
     }
-} //}}}
+}
 
-void semantics_check_iteration_statement(TreeNode* p) { /*{{{*/ //ok
+void semantics_check_case_statement(TreeNode* p) {
+  InfoNode* label;
+}
+
+void semantics_check_switch_statement(TreeNode* p) {
+  InfoNode* tmp = semantics_check_expression(p->children[0]);
+  if (!isint(tmp->type)) {
+    report_error("switch condition type error, not an int");
+  }
+  semantics_check(p->children[1]);
+}
+
+void semantics_check_iteration_statement(TreeNode* p) {
     int i;
     InfoNode *tmp;
     if (strcmp(p->data, "while()") == 0) {
@@ -756,9 +769,9 @@ void semantics_check_iteration_statement(TreeNode* p) { /*{{{*/ //ok
     loop_count++;
     semantics_check(p->children[p->size - 1]);
     loop_count--;
-} //}}}
+}
 
-void semantics_check_jump_statement(TreeNode* p) { /* {{{ */
+void semantics_check_jump_statement(TreeNode* p) {
     if (strcmp(p->children[0]->data, "return") == 0) {
         if (top_function == NULL) {
             report_error("'return' is not in a function");
@@ -779,7 +792,7 @@ void semantics_check_jump_statement(TreeNode* p) { /* {{{ */
             report_error("jump statement not in a loop!!!");
         }
     }
-} //}}}
+}
 
 int semantics_check_same_type(InfoNode* x, InfoNode* y) { /*{{{*/ //ok
     //只是检查类型，不需要考虑isleftvalue的问题
